@@ -210,6 +210,12 @@ npx sarmay-kaz-download
 models/KazakhBERTmulti-onnx
 ```
 
+这个下载命令可以安全重跑：
+
+- 已完整的文件会自动跳过
+- 未下载完的大文件会自动续传
+- 网络抖动时会自动重试
+
 更完整的模型下载文档见：  
 [docs/model-download.md](docs/model-download.md)
 

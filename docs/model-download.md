@@ -43,6 +43,12 @@ npx sarmay-kaz-download
 npx sarmay-kaz-download ./models/KazakhBERTmulti-onnx
 ```
 
+这个下载器支持：
+
+- 已完整文件自动跳过
+- 中断后的大文件自动续传
+- 网络抖动自动重试
+
 如果网络需要代理：
 
 ```bash

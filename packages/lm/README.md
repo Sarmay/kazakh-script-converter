@@ -43,6 +43,12 @@ npx sarmay-kaz-download
 npx sarmay-kaz-download ./models/KazakhBERTmulti-onnx
 ```
 
+这个 CLI 支持：
+
+- 已完成文件自动跳过
+- 中断后的大文件自动续传
+- 网络错误自动重试
+
 ## 最简单的用法
 
 先把 ONNX 模型目录准备好，例如：
