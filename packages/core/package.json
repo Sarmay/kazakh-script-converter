@@ -1,0 +1,35 @@
+{
+  "name": "kazakh-script-converter",
+  "version": "0.1.0",
+  "description": "Lightweight Kazakh Arabic/Cyrillic script converter for web and Node.js.",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsup src/index.ts --format esm,cjs --dts --clean",
+    "prepack": "npm run build",
+    "test": "vitest run"
+  },
+  "keywords": [
+    "kazakh",
+    "cyrillic",
+    "arabic",
+    "tote-zhazu",
+    "transliteration",
+    "converter"
+  ],
+  "license": "MIT"
+}

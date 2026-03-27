@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kazakh Script Converter Browser Demo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Alegreya:wght@500;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #f4efe2;
+        --ink: #17211f;
+        --muted: #58625f;
+        --panel: rgba(255, 251, 242, 0.76);
+        --line: rgba(23, 33, 31, 0.12);
+        --accent: #9d2f20;
+        --accent-2: #1f5d57;
+        --shadow: 0 28px 60px rgba(57, 49, 33, 0.18);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "IBM Plex Sans", sans-serif;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at top left, rgba(157, 47, 32, 0.12), transparent 34%),
+          radial-gradient(circle at bottom right, rgba(31, 93, 87, 0.16), transparent 28%),
+          linear-gradient(180deg, #f7f1e3 0%, #efe5d3 100%);
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        opacity: 0.3;
+        background-image:
+          linear-gradient(rgba(23, 33, 31, 0.025) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(23, 33, 31, 0.025) 1px, transparent 1px);
+        background-size: 28px 28px;
+      }
+
+      .shell {
+        width: min(1180px, calc(100vw - 32px));
+        margin: 32px auto;
+        padding: 28px;
+        border: 1px solid var(--line);
+        border-radius: 28px;
+        background: linear-gradient(180deg, rgba(255, 250, 241, 0.78), rgba(250, 243, 230, 0.92));
+        box-shadow: var(--shadow);
+        backdrop-filter: blur(18px);
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: 1.2fr 0.8fr;
+        gap: 24px;
+        align-items: end;
+      }
+
+      .eyebrow {
+        margin: 0 0 12px;
+        font-size: 12px;
+        letter-spacing: 0.26em;
+        text-transform: uppercase;
+        color: var(--accent-2);
+      }
+
+      h1 {
+        margin: 0;
+        font-family: "Alegreya", serif;
+        font-weight: 700;
+        font-size: clamp(38px, 7vw, 74px);
+        line-height: 0.94;
+        letter-spacing: -0.03em;
+      }
+
+      .hero p {
+        max-width: 58ch;
+        margin: 16px 0 0;
+        color: var(--muted);
+        font-size: 16px;
+        line-height: 1.75;
+      }
+
+      .hero-note {
+        padding: 18px;
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.46);
+      }
+
+      .hero-note strong {
+        display: block;
+        margin-bottom: 10px;
+        color: var(--accent);
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
+        gap: 24px;
+        margin-top: 28px;
+      }
+
+      .panel {
+        position: relative;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 22px;
+        background: var(--panel);
+        padding: 20px;
+      }
+
+      .panel::after {
+        content: "";
+        position: absolute;
+        inset: auto -30% -50% auto;
+        width: 180px;
+        height: 180px;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(157, 47, 32, 0.11), transparent 66%);
+      }
+
+      .panel-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 14px;
+      }
+
+      .panel-title {
+        margin: 0;
+        font-size: 14px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+
+      .badge {
+        padding: 8px 12px;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        font-size: 12px;
+        color: var(--muted);
+        background: rgba(255, 255, 255, 0.65);
+      }
+
+      .controls {
+        display: grid;
+        gap: 14px;
+      }
+
+      .row {
+        display: grid;
+        gap: 8px;
+      }
+
+      label {
+        font-size: 12px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      select,
+      textarea,
+      input {
+        width: 100%;
+        border: 1px solid rgba(23, 33, 31, 0.14);
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.88);
+        color: var(--ink);
+        padding: 14px 16px;
+        font: inherit;
+      }
+
+      textarea {
+        min-height: 180px;
+        resize: vertical;
+        line-height: 1.7;
+      }
+
+      .arabic {
+        font-family: "IBM Plex Sans Arabic", sans-serif;
+        direction: rtl;
+        text-align: right;
+        font-size: 18px;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+
+      button {
+        appearance: none;
+        border: 0;
+        border-radius: 999px;
+        padding: 13px 18px;
+        font: inherit;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 160ms ease, box-shadow 160ms ease, opacity 160ms ease;
+      }
+
+      button:hover {
+        transform: translateY(-1px);
+      }
+
+      .primary {
+        background: var(--ink);
+        color: #fff7ed;
+        box-shadow: 0 14px 28px rgba(23, 33, 31, 0.18);
+      }
+
+      .secondary {
+        background: rgba(255, 255, 255, 0.82);
+        color: var(--ink);
+        border: 1px solid var(--line);
+      }
+
+      .meta {
+        display: grid;
+        gap: 14px;
+      }
+
+      pre {
+        margin: 0;
+        padding: 16px;
+        overflow: auto;
+        border-radius: 18px;
+        border: 1px solid var(--line);
+        background: rgba(20, 28, 27, 0.92);
+        color: #f6f0de;
+        font-size: 13px;
+        line-height: 1.6;
+      }
+
+      .sample-list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .sample {
+        padding: 14px;
+        border-radius: 16px;
+        border: 1px solid var(--line);
+        background: rgba(255, 255, 255, 0.55);
+        cursor: pointer;
+        transition: background 160ms ease, transform 160ms ease;
+      }
+
+      .sample:hover {
+        background: rgba(255, 255, 255, 0.82);
+        transform: translateX(2px);
+      }
+
+      .sample strong {
+        display: block;
+        margin-bottom: 6px;
+      }
+
+      .footer {
+        margin-top: 18px;
+        font-size: 13px;
+        color: var(--muted);
+      }
+
+      @media (max-width: 920px) {
+        .hero,
+        .grid {
+          grid-template-columns: 1fr;
+        }
+
+        .shell {
+          margin: 16px auto;
+          padding: 18px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <section class="hero">
+        <div>
+          <p class="eyebrow">Kazakh Script Converter</p>
+          <h1>Browser ESM Demo for Cyrillic and Tote Zhazu</h1>
+          <p>
+            This page imports the local build directly from <code>../packages/core/dist/index.js</code> and
+            runs entirely in the browser. It demonstrates plain function calls, converter instances,
+            and custom lexicon injection without any backend service.
+          </p>
+        </div>
+        <aside class="hero-note">
+          <strong>What this proves</strong>
+          The npm package can be consumed as a browser-side ES module. Open this file through a local
+          static server after <code>npm run build</code>, then type or load a sample sentence below.
+        </aside>
+      </section>
+
+      <section class="grid">
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">Interactive Conversion</h2>
+            <span class="badge" id="status">ready</span>
+          </div>
+          <div class="controls">
+            <div class="row">
+              <label for="mode">Mode</label>
+              <select id="mode">
+                <option value="syr2arb">Cyrillic to Arabic</option>
+                <option value="arb2syr">Arabic to Cyrillic</option>
+              </select>
+            </div>
+
+            <div class="row">
+              <label for="input">Input</label>
+              <textarea id="input">Қазақстан</textarea>
+            </div>
+
+            <div class="actions">
+              <button class="primary" id="convert">Convert</button>
+              <button class="secondary" id="swap">Swap Direction</button>
+              <button class="secondary" id="customLexicon">Use Custom Lexicon Example</button>
+            </div>
+
+            <div class="row">
+              <label for="output">Output</label>
+              <textarea id="output" readonly></textarea>
+            </div>
+          </div>
+          <p class="footer">
+            Arabic output switches to an Arabic-capable font automatically. The example also exposes
+            the current generated ESM snippet on the right.
+          </p>
+        </div>
+
+        <div class="meta">
+          <div class="panel">
+            <div class="panel-header">
+              <h2 class="panel-title">ESM Usage</h2>
+              <span class="badge">browser</span>
+            </div>
+            <pre id="snippet"></pre>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header">
+              <h2 class="panel-title">Load Samples</h2>
+              <span class="badge">python-aligned</span>
+            </div>
+            <div class="sample-list" id="samples"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script type="module">
+      import {
+        ArabicToCyrillicConverter,
+        CyrillicToArabicConverter,
+        arb2syr,
+        syr2arb
+      } from "../packages/core/dist/index.js";
+
+      const modeEl = document.getElementById("mode");
+      const inputEl = document.getElementById("input");
+      const outputEl = document.getElementById("output");
+      const snippetEl = document.getElementById("snippet");
+      const statusEl = document.getElementById("status");
+      const samplesEl = document.getElementById("samples");
+
+      const samples = [
+        {
+          mode: "syr2arb",
+          title: "Country name",
+          input: "Қазақстан"
+        },
+        {
+          mode: "arb2syr",
+          title: "Arabic greeting",
+          input: "سالەم"
+        },
+        {
+          mode: "syr2arb",
+          title: "Business regression sentence",
+          input: "2026-жылы Қазақстанның ЖІӨ-сі 5%-ға өседі деп күтілуде!"
+        },
+        {
+          mode: "arb2syr",
+          title: "Three-place list",
+          input: "قازاقستان، الماتى، استانا."
+        }
+      ];
+
+      function setArabicMode(enabled) {
+        inputEl.classList.toggle("arabic", enabled);
+        outputEl.classList.toggle("arabic", !enabled);
+      }
+
+      function makeSnippet(mode, input, output) {
+        const fnName = mode === "syr2arb" ? "syr2arb" : "arb2syr";
+        return `import { ${fnName} } from "kazakh-script-converter";\n\nconst input = ${JSON.stringify(
+          input
+        )};\nconst output = ${fnName}(input);\n// ${output}`;
+      }
+
+      function convert() {
+        const mode = modeEl.value;
+        const input = inputEl.value;
+        const output = mode === "syr2arb" ? syr2arb(input) : arb2syr(input);
+
+        outputEl.value = output;
+        setArabicMode(mode === "arb2syr");
+        snippetEl.textContent = makeSnippet(mode, input, output);
+        statusEl.textContent = "converted";
+      }
+
+      function applySample(sample) {
+        modeEl.value = sample.mode;
+        inputEl.value = sample.input;
+        convert();
+      }
+
+      document.getElementById("convert").addEventListener("click", convert);
+
+      document.getElementById("swap").addEventListener("click", () => {
+        const nextMode = modeEl.value === "syr2arb" ? "arb2syr" : "syr2arb";
+        const currentOutput = outputEl.value;
+        modeEl.value = nextMode;
+        inputEl.value = currentOutput || inputEl.value;
+        convert();
+      });
+
+      document.getElementById("customLexicon").addEventListener("click", () => {
+        const converter = new CyrillicToArabicConverter({
+          lexicon: {
+            nativeRoots: ["сынақ"]
+          }
+        });
+
+        modeEl.value = "syr2arb";
+        inputEl.value = "Сынақ";
+        outputEl.value = converter.convert("Сынақ");
+        snippetEl.textContent =
+          `import { CyrillicToArabicConverter } from "kazakh-script-converter";\n\n` +
+          `const converter = new CyrillicToArabicConverter({\n` +
+          `  lexicon: { nativeRoots: ["сынақ"] }\n` +
+          `});\n` +
+          `const output = converter.convert("Сынақ");\n` +
+          `// ${outputEl.value}`;
+        setArabicMode(false);
+        statusEl.textContent = "custom lexicon";
+      });
+
+      modeEl.addEventListener("change", () => {
+        statusEl.textContent = "ready";
+        setArabicMode(modeEl.value === "arb2syr");
+      });
+
+      for (const sample of samples) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "sample";
+        button.innerHTML = `<strong>${sample.title}</strong>${sample.input}`;
+        button.addEventListener("click", () => applySample(sample));
+        samplesEl.appendChild(button);
+      }
+
+      const probe = new ArabicToCyrillicConverter();
+      console.debug("ArabicToCyrillicConverter probe:", probe.convert("قازاقستان"));
+
+      convert();
+    </script>
+  </body>
+</html>

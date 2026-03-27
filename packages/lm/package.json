@@ -1,0 +1,44 @@
+{
+  "name": "kazakh-script-converter-lm",
+  "version": "0.1.0",
+  "description": "Node.js LM and ONNX helpers for kazakh-script-converter.",
+  "type": "module",
+  "bin": {
+    "kazakh-script-converter-lm-download": "./bin/download-model.mjs"
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "bin",
+    "README.md"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsup src/index.ts --format esm,cjs --dts --clean --external kazakh-script-converter --external onnxruntime-node --external @huggingface/tokenizers",
+    "prepack": "npm run build",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@huggingface/tokenizers": "^0.1.3",
+    "kazakh-script-converter": "^0.1.0",
+    "onnxruntime-node": "^1.24.3"
+  },
+  "keywords": [
+    "kazakh",
+    "cyrillic",
+    "arabic",
+    "onnx",
+    "language-model",
+    "disambiguation"
+  ],
+  "license": "MIT"
+}

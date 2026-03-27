@@ -1,0 +1,23 @@
+{
+  "name": "kazakh-script-converter-workspace",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/core",
+    "packages/lm"
+  ],
+  "scripts": {
+    "build": "npm run build --workspace kazakh-script-converter && npm run build --workspace kazakh-script-converter-lm",
+    "test": "npm run test --workspace kazakh-script-converter && npm run test --workspace kazakh-script-converter-lm",
+    "pack:dry": "npm run build && npm pack --dry-run --cache .npm-cache --workspace kazakh-script-converter && npm pack --dry-run --cache .npm-cache --workspace kazakh-script-converter-lm",
+    "download:model:kazbert": "node scripts/download-hf-model.mjs",
+    "export:model:kazbert": "node scripts/export-hf-mlm-to-onnx.mjs amandyk/KazakhBERTmulti models/KazakhBERTmulti-onnx",
+    "export:model:roberta-kaz-large": "node scripts/export-hf-mlm-to-onnx.mjs nur-dev/roberta-kaz-large models/roberta-kaz-large-onnx"
+  },
+  "devDependencies": {
+    "@types/node": "^24.12.0",
+    "tsup": "^8.5.1",
+    "typescript": "^5.8.2",
+    "vitest": "^3.2.4"
+  }
+}
