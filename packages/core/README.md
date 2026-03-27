@@ -1,4 +1,4 @@
-# kazakh-script-converter
+# @sarmay/kaz-converter
 
 轻量、开箱即用的哈萨克语文字转换包，负责：
 
@@ -12,13 +12,13 @@
 ## 安装
 
 ```bash
-npm install kazakh-script-converter
+npm install @sarmay/kaz-converter
 ```
 
 ## 浏览器使用
 
 ```ts
-import { arb2syr, syr2arb } from "kazakh-script-converter";
+import { arb2syr, syr2arb } from "@sarmay/kaz-converter";
 
 console.log(arb2syr("قازاقستان"));
 console.log(syr2arb("Қазақстан"));
@@ -28,7 +28,7 @@ console.log(syr2arb("Қазақстан"));
 
 ```html
 <script type="module">
-  import { arb2syr, syr2arb } from "https://cdn.jsdelivr.net/npm/kazakh-script-converter/dist/index.js";
+  import { arb2syr, syr2arb } from "https://cdn.jsdelivr.net/npm/@sarmay/kaz-converter/dist/index.js";
 
   console.log(arb2syr("سالەم"));
   console.log(syr2arb("Сәлем"));
@@ -43,7 +43,7 @@ import {
   CyrillicToArabicConverter,
   arb2syr,
   syr2arb
-} from "kazakh-script-converter";
+} from "@sarmay/kaz-converter";
 
 console.log(arb2syr("الما"));
 console.log(syr2arb("Алматы"));
@@ -69,7 +69,7 @@ console.log(cyr2arb.convert("Қазақстан"));
 请安装第二个包：
 
 ```bash
-npm install kazakh-script-converter kazakh-script-converter-lm
+npm install @sarmay/kaz-converter @sarmay/kaz-converter-lm
 ```
 
-然后参考 `kazakh-script-converter-lm` 的 README，或者仓库根目录 README。
+然后参考 `@sarmay/kaz-converter-lm` 的 README，或者仓库根目录 README。

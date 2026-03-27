@@ -31,16 +31,16 @@ node scripts/download-hf-model.mjs sarmay/KazakhBERTmulti-onnx models/KazakhBERT
 
 ### 方式 1.5：npm 包自带 CLI
 
-如果你是从 npm 安装 `kazakh-script-converter-lm`，不是在这个仓库源码里工作，推荐直接：
+如果你是从 npm 安装 `@sarmay/kaz-converter-lm`，不是在这个仓库源码里工作，推荐直接：
 
 ```bash
-npx kazakh-script-converter-lm-download
+npx sarmay-kaz-download
 ```
 
 或者指定目录：
 
 ```bash
-npx kazakh-script-converter-lm-download ./models/KazakhBERTmulti-onnx
+npx sarmay-kaz-download ./models/KazakhBERTmulti-onnx
 ```
 
 如果网络需要代理：
@@ -81,12 +81,12 @@ models/
 ## Node.js 中如何使用
 
 ```bash
-npm install kazakh-script-converter kazakh-script-converter-lm
+npm install @sarmay/kaz-converter @sarmay/kaz-converter-lm
 node scripts/download-hf-model.mjs
 ```
 
 ```ts
-import { createOnnxArabicToCyrillicConverter } from "kazakh-script-converter-lm";
+import { createOnnxArabicToCyrillicConverter } from "@sarmay/kaz-converter-lm";
 
 const converter = await createOnnxArabicToCyrillicConverter({
   modelDirectory: "./models/KazakhBERTmulti-onnx"
@@ -118,4 +118,8 @@ console.log(await converter.convertAsync("بىر كۇنى"));
 
 本仓库已经准备了一份可直接用的模型卡模板：
 
-- [docs/huggingface-model-card.md](/Users/sarmay/Desktop/TestProjects/kazakh-script-converter/docs/huggingface-model-card.md)
+- [docs/huggingface-model-card.md](huggingface-model-card.md)
+
+如果你要更新 Hugging Face 仓库自己的 `README.md`，最简单的做法就是直接以这份模板为基础修改，再同步粘贴到：
+
+- <https://huggingface.co/sarmay/KazakhBERTmulti-onnx>

@@ -1,5 +1,5 @@
-import { ArabicToCyrillicConverter } from "kazakh-script-converter";
-import type { ContextDisambiguator, MaybePromise, RawToken } from "kazakh-script-converter";
+import { ArabicToCyrillicConverter } from "@sarmay/kaz-converter";
+import type { ContextDisambiguator, MaybePromise, RawToken } from "@sarmay/kaz-converter";
 import { access, readFile } from "node:fs/promises";
 import { join } from "node:path";
 

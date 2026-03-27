@@ -1,6 +1,6 @@
 # 提升精度：训练或微调哈萨克语 LM 参考
 
-这份文档面向想提升 `kazakh-script-converter-lm` 消歧精度的维护者。
+这份文档面向想提升 `@sarmay/kaz-converter-lm` 消歧精度的维护者。
 
 当前仓库的 LM 接入方式不是“让模型直接做全文转换”，而是：
 
@@ -195,7 +195,7 @@ tokenizer_config.json
 一旦模型目录准备好，使用者只需要：
 
 ```ts
-import { createOnnxArabicToCyrillicConverter } from "kazakh-script-converter-lm";
+import { createOnnxArabicToCyrillicConverter } from "@sarmay/kaz-converter-lm";
 
 const converter = await createOnnxArabicToCyrillicConverter({
   modelDirectory: "./models/your-model"
@@ -248,5 +248,5 @@ models/KazakhBERTmulti-onnx
 
 在当前阶段，两个包已经足够：
 
-- `kazakh-script-converter`
-- `kazakh-script-converter-lm`
+- `@sarmay/kaz-converter`
+- `@sarmay/kaz-converter-lm`

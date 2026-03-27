@@ -27,4 +27,4 @@ npm run download:model:kazbert
 
 或者查看更完整的说明：
 
-- [docs/model-download.md](/Users/sarmay/Desktop/TestProjects/kazakh-script-converter/docs/model-download.md)
+- [docs/model-download.md](../docs/model-download.md)

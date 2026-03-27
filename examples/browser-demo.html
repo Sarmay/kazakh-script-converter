@@ -411,7 +411,7 @@
 
       function makeSnippet(mode, input, output) {
         const fnName = mode === "syr2arb" ? "syr2arb" : "arb2syr";
-        return `import { ${fnName} } from "kazakh-script-converter";\n\nconst input = ${JSON.stringify(
+        return `import { ${fnName} } from "@sarmay/kaz-converter";\n\nconst input = ${JSON.stringify(
           input
         )};\nconst output = ${fnName}(input);\n// ${output}`;
       }
@@ -454,7 +454,7 @@
         inputEl.value = "Сынақ";
         outputEl.value = converter.convert("Сынақ");
         snippetEl.textContent =
-          `import { CyrillicToArabicConverter } from "kazakh-script-converter";\n\n` +
+          `import { CyrillicToArabicConverter } from "@sarmay/kaz-converter";\n\n` +
           `const converter = new CyrillicToArabicConverter({\n` +
           `  lexicon: { nativeRoots: ["сынақ"] }\n` +
           `});\n` +

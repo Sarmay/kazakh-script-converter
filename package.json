@@ -1,15 +1,21 @@
 {
-  "name": "kazakh-script-converter-workspace",
+  "name": "@sarmay/kaz-converter-workspace",
   "private": true,
   "type": "module",
+  "packageManager": "npm@10.8.2",
   "workspaces": [
     "packages/core",
     "packages/lm"
   ],
   "scripts": {
-    "build": "npm run build --workspace kazakh-script-converter && npm run build --workspace kazakh-script-converter-lm",
-    "test": "npm run test --workspace kazakh-script-converter && npm run test --workspace kazakh-script-converter-lm",
-    "pack:dry": "npm run build && npm pack --dry-run --cache .npm-cache --workspace kazakh-script-converter && npm pack --dry-run --cache .npm-cache --workspace kazakh-script-converter-lm",
+    "build": "npm run build --workspace @sarmay/kaz-converter && npm run build --workspace @sarmay/kaz-converter-lm",
+    "clean": "rm -rf node_modules .npm-cache packages/core/dist packages/lm/dist packages/core/node_modules packages/lm/node_modules",
+    "test": "npm run test --workspace @sarmay/kaz-converter && npm run test --workspace @sarmay/kaz-converter-lm",
+    "pack:dry": "npm run build && npm pack --dry-run --cache .npm-cache --workspace @sarmay/kaz-converter && npm pack --dry-run --cache .npm-cache --workspace @sarmay/kaz-converter-lm",
+    "release:check": "node scripts/validate-package-metadata.mjs && npm install --cache .npm-cache && npm run build && npm test && npm run pack:dry && npm whoami",
+    "publish:core": "npm publish --access public --workspace @sarmay/kaz-converter",
+    "publish:lm": "npm publish --access public --workspace @sarmay/kaz-converter-lm",
+    "publish:all": "npm run publish:core && npm run publish:lm",
     "download:model:kazbert": "node scripts/download-hf-model.mjs",
     "export:model:kazbert": "node scripts/export-hf-mlm-to-onnx.mjs amandyk/KazakhBERTmulti models/KazakhBERTmulti-onnx",
     "export:model:roberta-kaz-large": "node scripts/export-hf-mlm-to-onnx.mjs nur-dev/roberta-kaz-large models/roberta-kaz-large-onnx"

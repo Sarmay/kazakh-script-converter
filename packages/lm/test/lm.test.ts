@@ -1,6 +1,6 @@
 import { describe, expect, test, vi } from "vitest";
 
-import { ArabicToCyrillicConverter } from "kazakh-script-converter";
+import { ArabicToCyrillicConverter } from "@sarmay/kaz-converter";
 
 import {
   CandidateLanguageModelDisambiguator,

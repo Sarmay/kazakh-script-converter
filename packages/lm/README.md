@@ -1,6 +1,6 @@
-# kazakh-script-converter-lm
+# @sarmay/kaz-converter-lm
 
-`kazakh-script-converter-lm` 是 `kazakh-script-converter` 的 Node.js LM 扩展包。
+`@sarmay/kaz-converter-lm` 是 `@sarmay/kaz-converter` 的 Node.js LM 扩展包。
 
 它负责：
 
@@ -13,7 +13,7 @@
 ## 安装
 
 ```bash
-npm install kazakh-script-converter kazakh-script-converter-lm
+npm install @sarmay/kaz-converter @sarmay/kaz-converter-lm
 ```
 
 这个包会自动安装 `onnxruntime-node` 和 `@huggingface/tokenizers`，使用者不需要再手动装第三份依赖。
@@ -34,13 +34,13 @@ npm run download:model:kazbert
 如果你是从 npm 安装这个包，而不是在仓库源码里工作，推荐直接用包自带 CLI：
 
 ```bash
-npx kazakh-script-converter-lm-download
+npx sarmay-kaz-download
 ```
 
 也可以指定目录：
 
 ```bash
-npx kazakh-script-converter-lm-download ./models/KazakhBERTmulti-onnx
+npx sarmay-kaz-download ./models/KazakhBERTmulti-onnx
 ```
 
 ## 最简单的用法
@@ -58,7 +58,7 @@ models/KazakhBERTmulti-onnx/
 然后：
 
 ```ts
-import { createOnnxArabicToCyrillicConverter } from "kazakh-script-converter-lm";
+import { createOnnxArabicToCyrillicConverter } from "@sarmay/kaz-converter-lm";
 
 const converter = await createOnnxArabicToCyrillicConverter({
   modelDirectory: "./models/KazakhBERTmulti-onnx"
@@ -71,11 +71,11 @@ console.log(await converter.convertAsync("بىر كۇنى"));
 ## 分步用法
 
 ```ts
-import { ArabicToCyrillicConverter } from "kazakh-script-converter";
+import { ArabicToCyrillicConverter } from "@sarmay/kaz-converter";
 import {
   CandidateLanguageModelDisambiguator,
   OnnxMaskedLanguageModelScorer
-} from "kazakh-script-converter-lm";
+} from "@sarmay/kaz-converter-lm";
 
 const scorer = await OnnxMaskedLanguageModelScorer.fromDirectory("./models/KazakhBERTmulti-onnx");
 
@@ -118,7 +118,7 @@ console.log(await converter.convertAsync("اكەم كەلدى."));
 ## 自定义候选词
 
 ```ts
-import { createOnnxDisambiguator } from "kazakh-script-converter-lm";
+import { createOnnxDisambiguator } from "@sarmay/kaz-converter-lm";
 
 const disambiguator = await createOnnxDisambiguator({
   modelDirectory: "./models/KazakhBERTmulti-onnx",
@@ -133,8 +133,8 @@ const disambiguator = await createOnnxDisambiguator({
 如果你不想用 ONNX，也可以自己提供一个句子打分器：
 
 ```ts
-import { ArabicToCyrillicConverter } from "kazakh-script-converter";
-import { CandidateLanguageModelDisambiguator } from "kazakh-script-converter-lm";
+import { ArabicToCyrillicConverter } from "@sarmay/kaz-converter";
+import { CandidateLanguageModelDisambiguator } from "@sarmay/kaz-converter-lm";
 
 const disambiguator = new CandidateLanguageModelDisambiguator({
   scorer: async (sentence) => {

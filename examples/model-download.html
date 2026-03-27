@@ -142,7 +142,7 @@
           <ul>
             <li>推荐本地目录：<code>models/KazakhBERTmulti-onnx</code></li>
             <li>至少需要：<code>model.onnx</code>、<code>tokenizer.json</code>、<code>tokenizer_config.json</code></li>
-            <li>适用包：<code>kazakh-script-converter-lm</code></li>
+            <li>适用包：<code>@sarmay/kaz-converter-lm</code></li>
           </ul>
         </section>
 
@@ -156,19 +156,19 @@ node scripts/download-hf-model.mjs \
   models/KazakhBERTmulti-onnx
 
 # npm user
-npx kazakh-script-converter-lm-download
-npx kazakh-script-converter-lm-download ./models/KazakhBERTmulti-onnx</code></pre>
+npx sarmay-kaz-download
+npx sarmay-kaz-download ./models/KazakhBERTmulti-onnx</code></pre>
         </section>
       </div>
 
       <div class="grid">
         <section class="card">
           <h2>Node.js 用法</h2>
-          <pre><code>npm install kazakh-script-converter kazakh-script-converter-lm
+          <pre><code>npm install @sarmay/kaz-converter @sarmay/kaz-converter-lm
 node scripts/download-hf-model.mjs
 
 // app.mjs
-import { createOnnxArabicToCyrillicConverter } from "kazakh-script-converter-lm";
+import { createOnnxArabicToCyrillicConverter } from "@sarmay/kaz-converter-lm";
 
 const converter = await createOnnxArabicToCyrillicConverter({
   modelDirectory: "./models/KazakhBERTmulti-onnx"
