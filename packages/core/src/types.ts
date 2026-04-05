@@ -6,6 +6,7 @@ export interface LexiconData {
 export type MaybePromise<T> = T | Promise<T>;
 
 export type RawToken = readonly [source: string, converted: string];
+export type NameYSequenceStyle = "normalize" | "preserve";
 
 export interface ContextDisambiguator {
   disambiguate(rawTokens: readonly RawToken[], contextSentence: string): MaybePromise<string[]>;
@@ -18,4 +19,5 @@ export interface CyrillicToArabicOptions {
 export interface ArabicToCyrillicOptions {
   useLm?: boolean;
   disambiguator?: ContextDisambiguator;
+  nameYSequenceStyle?: NameYSequenceStyle;
 }

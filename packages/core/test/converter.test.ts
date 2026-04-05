@@ -42,6 +42,43 @@ describe("ArabicToCyrillicConverter", () => {
 
     expect(output).toContain("Әлме");
   });
+
+  test("handles common Kazakh personal-name compounds more naturally", () => {
+    const cases = [
+      ["مەڭدىباي", "Меңдібай"],
+      ["تولەباي", "Төлебай"],
+      ["بەكدانا", "Бекдана"],
+      ["گۇلميرا", "Гүлмира"],
+      ["باقتيار", "Бақтияр"],
+      ["جاناحمەت", "Жанахмет"],
+      ["ابدىبەك", "Әбдібек"],
+      ["ءابدىسالام", "Әбдісалам"],
+      ["ەلنۇر", "Елнұр"],
+      ["ەربولسىن", "Ерболсын"],
+      ["ءابدىباقي", "Әбдібақи"],
+      ["داۋلەتباق", "Дәулетбақ"],
+      ["ءتولعوجا", "Төлғожа"],
+      ["باقىتكەلدى", "Бақыткелді"],
+      ["ورازگەلدى", "Оразгелді"],
+      ["بەيبارىس", "Бейбарыс"],
+      ["نۇربۇلان", "Нұрбұлан"],
+      ["نۇريكامال", "Нұрикамал"]
+    ] as const;
+
+    for (const [input, expected] of cases) {
+      expect(arb2syr(input), input).toBe(expected);
+    }
+  });
+
+  test("lets callers choose how double-y name sequences are rendered", () => {
+    expect(arb2syr("عالييا")).toBe("Ғалия");
+    expect(arb2syr("دييار")).toBe("Дияр");
+    expect(arb2syr("نيياز")).toBe("Нияз");
+
+    expect(arb2syr("عالييا", { nameYSequenceStyle: "preserve" })).toBe("Ғалийа");
+    expect(arb2syr("دييار", { nameYSequenceStyle: "preserve" })).toBe("Дийар");
+    expect(arb2syr("نيياز", { nameYSequenceStyle: "preserve" })).toBe("Нийаз");
+  });
 });
 
 describe("CyrillicToArabicConverter", () => {
