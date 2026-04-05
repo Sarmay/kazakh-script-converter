@@ -1,5 +1,5 @@
 import { NoopDisambiguator } from "./disambiguation";
-import type { ArabicToCyrillicOptions, ContextDisambiguator, RawToken } from "./types";
+import type { ArabicToCyrillicOptions, ContextDisambiguator, NameYSequenceStyle, RawToken } from "./types";
 
 type WordMatchType = "exception" | "proper" | "loanword" | "anonymous" | null;
 type HarmonyState = "soft" | "hard";
@@ -103,11 +103,38 @@ const EXCEPTIONS: Record<string, string> = {
   "الماتى": "Алматы",
   "استانا": "Астана",
   "قازاقستان": "Қазақстан",
+  "ءابدى": "әбді",
+  "ابدى": "әбді",
+  "امىر": "әмір",
+  "بۇلان": "бұлан",
+  "باقي": "бақи",
+  "باقيت": "бақит",
+  "باقىت": "бақыт",
+  "ناسىر": "насыр",
+  "داۋلەت": "дәулет",
+  "بول": "бол",
+  "بولسىن": "болсын",
+  "بوللا": "болла",
+  "قوجا": "қожа",
+  "عوجا": "ғожа",
+  "نار": "нар",
+  "نازار": "назар",
+  "سالي": "сали",
+  "دياس": "диас",
+  "جىبەك": "жібек",
+  "حاكىم": "хакім",
+  "كيرا": "кира",
+  "يكامال": "икамал",
   "جۇڭگو": "Жұңго",
   "شي": "Си",
   "جينپيڭ": "Цзиньпин",
   "كىتاپ": "кітап",
   "راحمەت": "рахмет",
+  "احمەت": "ахмет",
+  "ماحمەت": "махмет",
+  "يار": "ияр",
+  "يال": "иял",
+  "ياز": "ияз",
   "اۋىل": "ауыл",
   "گب": "ГБ",
   "پروگرەس": "прогресс",
@@ -419,6 +446,77 @@ const COMPOUND_PIVOT_ROOTS = [
   "تۇستىگ"
 ];
 
+const NAME_PREFIX_COMPONENTS = [
+  "ءابدى",
+  "ابدى",
+  "داۋلەت",
+  "گۇل",
+  "بەك",
+  "نۇر"
+] as const;
+
+const NAME_SUFFIX_COMPONENTS = [
+  "مۇحامبەت",
+  "احمەت",
+  "حالىق",
+  "قاسىم",
+  "سادىق",
+  "سالام",
+  "بولسىن",
+  "بوللا",
+  "ناسىر",
+  "نازار",
+  "بيرا",
+  "بيبا",
+  "يپا",
+  "ريپا",
+  "نيپا",
+  "يما",
+  "سيما",
+  "ميلا",
+  "بيلا",
+  "جيدا",
+  "زيلا",
+  "فيرا",
+  "نارا",
+  "ليپا",
+  "ليما",
+  "ديبا",
+  "ديلا",
+  "ديرا",
+  "لينا",
+  "كيرا",
+  "ننا",
+  "ادا",
+  "بارىس",
+  "كەلدى",
+  "گەلدى",
+  "بۇلان",
+  "يكامال",
+  "باقىت",
+  "باقيت",
+  "باقي",
+  "قوجا",
+  "عوجا",
+  "سالي",
+  "قالي",
+  "دييار",
+  "ييار",
+  "يياز",
+  "يياس",
+  "ييا",
+  "يار",
+  "يال",
+  "ياز",
+  "نار",
+  "جان",
+  "نۇر",
+  "بەك",
+  "باي",
+  "حان",
+  "گۇل"
+] as const;
+
 const IMPLICIT_SOFT_ROOTS = new Set([
   "ۇمىت",
   "تۇب",
@@ -543,6 +641,7 @@ interface RootMatch {
 export class ArabicToCyrillicConverter {
   readonly HAMZA = "\u0674";
   private readonly disambiguator: ContextDisambiguator;
+  private readonly nameYSequenceStyle: NameYSequenceStyle;
   private readonly loanwordPrefixTrie = new PrefixTrie();
   private readonly reZwnjEtc = /[\u200B-\u200F\u202A-\u202E\uFEFF]/gu;
   private readonly reSpaces = /[ \t]+/gu;
@@ -566,6 +665,7 @@ export class ArabicToCyrillicConverter {
     }
 
     this.disambiguator = options.disambiguator ?? new NoopDisambiguator();
+    this.nameYSequenceStyle = options.nameYSequenceStyle ?? "normalize";
 
     for (const prefix of LOANWORD_PREFIXES) {
       this.loanwordPrefixTrie.insert(prefix);
@@ -639,6 +739,42 @@ export class ArabicToCyrillicConverter {
     return false;
   }
 
+  private crossesProtectedNameEnding(word: string, splitIndex: number): boolean {
+    return NAME_SUFFIX_COMPONENTS.some((ending) => {
+      if (!word.endsWith(ending)) {
+        return false;
+      }
+
+      const protectedStart = word.length - ending.length;
+      return splitIndex > protectedStart && splitIndex < word.length;
+    });
+  }
+
+  private convertNameYSequence(word: string): string | null {
+    const normalized: Record<string, string> = {
+      "ييا": "ия",
+      "ييار": "ияр",
+      "يياز": "ияз",
+      "يياس": "ияс"
+    };
+    const preserved: Record<string, string> = {
+      "ييا": "ийа",
+      "ييار": "ийар",
+      "يياز": "ийаз",
+      "يياس": "ийас"
+    };
+
+    if (!(word in normalized)) {
+      return null;
+    }
+
+    if (this.nameYSequenceStyle === "preserve") {
+      return preserved[word];
+    }
+
+    return normalized[word];
+  }
+
   isValidSuffixSequence(suffix: string): boolean {
     if (!suffix) {
       return true;
@@ -700,6 +836,18 @@ export class ArabicToCyrillicConverter {
       return word.split("-");
     }
 
+    for (const prefix of NAME_PREFIX_COMPONENTS) {
+      if (word.startsWith(prefix) && word.length > prefix.length) {
+        return [word.slice(0, prefix.length), word.slice(prefix.length)];
+      }
+    }
+
+    for (const suffix of NAME_SUFFIX_COMPONENTS) {
+      if (word.endsWith(suffix) && word.length > suffix.length) {
+        return [word.slice(0, -suffix.length), suffix];
+      }
+    }
+
     if (word.startsWith(this.HAMZA)) {
       return [word];
     }
@@ -755,6 +903,10 @@ export class ArabicToCyrillicConverter {
       const suffix = word.slice(length);
 
       if (![...prefix].some((char) => this.arabicVowels.has(char))) {
+        continue;
+      }
+
+      if (this.crossesProtectedNameEnding(word, length)) {
         continue;
       }
 
@@ -872,12 +1024,22 @@ export class ArabicToCyrillicConverter {
       return word;
     }
 
+    const nameYSequence = this.convertNameYSequence(word);
+    if (nameYSequence) {
+      return nameYSequence;
+    }
+
     if (hasKey(EXCEPTIONS, word)) {
       return EXCEPTIONS[word];
     }
 
     if (hasKey(PROPER_NOUNS, word)) {
       return PROPER_NOUNS[word];
+    }
+
+    const segments = this.segmentCompoundWord(word);
+    if (segments.length > 1) {
+      return word.includes("-") ? segments.map((segment) => this.convertWord(segment)).join("-") : segments.map((segment) => this.convertWord(segment)).join("");
     }
 
     if (LOANWORD_EXACT.has(word)) {
