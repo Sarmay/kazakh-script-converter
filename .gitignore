@@ -42,3 +42,4 @@ models/*
 *.bin
 *.pth
 *.onnx
+examples/Names.json
