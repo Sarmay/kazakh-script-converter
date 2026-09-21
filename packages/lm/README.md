@@ -1,11 +1,13 @@
 # @sarmay/kaz-converter-lm
 
-`@sarmay/kaz-converter-lm` 是 `@sarmay/kaz-converter` 的 Node.js LM 扩展包。
+`@sarmay/kaz-converter-lm` 是可选的 Node.js ONNX 扩展。
 
-它负责：
+核心包 `@sarmay/kaz-converter` 已经默认带轻量 n-gram 消歧，浏览器和普通 Node.js 都不需要这个包。
+
+只有在你明确要用更大的 masked language model 做候选打分时，才安装本包。它负责：
 
 - ONNX masked language model 打分
-- 歧义词候选句打分选择
+- 把该 scorer 接到现有的候选消歧接口上
 - 直接创建可用的 `ArabicToCyrillicConverter`
 
 这个包只面向 Node.js，不面向浏览器。

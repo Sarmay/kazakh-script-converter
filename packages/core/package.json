@@ -39,6 +39,7 @@
   "scripts": {
     "build": "tsup src/index.ts --format esm,cjs --dts --clean",
     "prepack": "npm run build",
+    "ngram": "node scripts/build-ngram.mjs",
     "test": "vitest run"
   },
   "keywords": [

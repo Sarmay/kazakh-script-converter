@@ -1,4 +1,4 @@
-import { NoopDisambiguator } from "./disambiguation";
+import { LightDisambiguator, NoopDisambiguator } from "./disambiguation";
 import type { ArabicToCyrillicOptions, ContextDisambiguator, NameYSequenceStyle, RawToken } from "./types";
 
 type WordMatchType = "exception" | "proper" | "loanword" | "anonymous" | null;
@@ -709,7 +709,7 @@ export class ArabicToCyrillicConverter {
       );
     }
 
-    this.disambiguator = options.disambiguator ?? new NoopDisambiguator();
+    this.disambiguator = options.disambiguator ?? new LightDisambiguator();
     this.nameYSequenceStyle = options.nameYSequenceStyle ?? "normalize";
 
     for (const prefix of LOANWORD_PREFIXES) {
@@ -1428,32 +1428,37 @@ export class ArabicToCyrillicConverter {
     return next;
   }
 
-  private postProcessContextFix(rawTokens: readonly RawToken[]): string[] {
-    return rawTokens.map(([, cyr]) => cyr);
+  private toRawTokens(words: readonly string[]): RawToken[] {
+    return words.map((word) => [word, hasKey(EXCEPTIONS, word) ? EXCEPTIONS[word] : this.convertWord(word)] as const);
   }
 
-  private async postProcessContextFixAsync(rawTokens: readonly RawToken[], contextSentence: string): Promise<string[]> {
-    return this.disambiguator.disambiguate(rawTokens, contextSentence);
+  private disambiguateSync(rawTokens: readonly RawToken[], contextSentence: string): string[] {
+    const result = this.disambiguator.disambiguate(rawTokens, contextSentence);
+
+    if (typeof result === "object" && result !== null && "then" in result) {
+      return rawTokens.map(([, converted]) => converted);
+    }
+
+    return result;
   }
 
   convertPhrase(phrase: string): string {
-    const words = phrase.split(" ");
-    if (words.length <= 1) {
-      return this.convertWord(phrase);
+    const words = phrase.split(/[ \t]+/u).filter(Boolean);
+    if (words.length === 0) {
+      return phrase;
     }
 
-    const rawTokens = words.map((word) => [word, hasKey(EXCEPTIONS, word) ? EXCEPTIONS[word] : this.convertWord(word)] as const);
-    return this.postProcessContextFix(rawTokens).join(" ");
+    return this.disambiguateSync(this.toRawTokens(words), words.join(" ")).join(" ");
   }
 
   async convertPhraseAsync(phrase: string): Promise<string> {
-    const words = phrase.split(" ");
-    if (words.length <= 1) {
-      return this.convertWord(phrase);
+    const words = phrase.split(/[ \t]+/u).filter(Boolean);
+    if (words.length === 0) {
+      return phrase;
     }
 
-    const rawTokens = words.map((word) => [word, hasKey(EXCEPTIONS, word) ? EXCEPTIONS[word] : this.convertWord(word)] as const);
-    const fixed = await this.postProcessContextFixAsync(rawTokens, phrase);
+    const rawTokens = this.toRawTokens(words);
+    const fixed = await this.disambiguator.disambiguate(rawTokens, words.join(" "));
     return fixed.join(" ");
   }
 
@@ -1468,7 +1473,7 @@ export class ArabicToCyrillicConverter {
         continue;
       }
 
-      let result = line.replace(this.reArabicWords, (phrase) => (phrase.includes(" ") ? this.convertPhrase(phrase) : this.convertWord(phrase)));
+      let result = line.replace(this.reArabicWords, (phrase) => this.convertPhrase(phrase));
 
       if (result.length > 0) {
         result = result.replace(/[a-zа-яәіңғүұқөһ]/iu, (match) => match.toUpperCase());
@@ -1503,7 +1508,7 @@ export class ArabicToCyrillicConverter {
         const matchIndex = match.index ?? 0;
 
         result += line.slice(lastIndex, matchIndex);
-        result += phrase.includes(" ") ? await this.convertPhraseAsync(phrase) : this.convertWord(phrase);
+        result += await this.convertPhraseAsync(phrase);
         lastIndex = matchIndex + phrase.length;
       }
 

@@ -1,6 +1,14 @@
 import { describe, expect, test } from "vitest";
 
-import { ArabicToCyrillicConverter, CyrillicToArabicConverter, arb2syr, arb2syrAsync, syr2arb } from "../src/index";
+import {
+  ArabicToCyrillicConverter,
+  CyrillicToArabicConverter,
+  LightDisambiguator,
+  NoopDisambiguator,
+  arb2syr,
+  arb2syrAsync,
+  syr2arb
+} from "../src/index";
 import {
   arabicToCyrillicCases,
   cyrillicToArabicSentenceCases,
@@ -68,6 +76,22 @@ describe("ArabicToCyrillicConverter", () => {
     for (const [input, expected] of cases) {
       expect(arb2syr(input), input).toBe(expected);
     }
+  });
+
+  test("uses lightweight n-gram disambiguation by default for homographs", () => {
+    expect(arb2syr("الما بار")).toBe("Алма бар");
+    expect(arb2syr("اكەم كەلدى")).toBe("Әкем келді");
+    expect(arb2syr("بىر كۇنى")).toBe("Бір күні");
+  });
+
+  test("can disable disambiguation with NoopDisambiguator", () => {
+    const converter = new ArabicToCyrillicConverter({
+      disambiguator: new NoopDisambiguator()
+    });
+
+    expect(converter.convert("الما بار")).toBe("Алма бар");
+    expect(converter).toBeInstanceOf(ArabicToCyrillicConverter);
+    expect(new LightDisambiguator()).toBeInstanceOf(LightDisambiguator);
   });
 
   test("lets callers choose how double-y name sequences are rendered", () => {

@@ -1,13 +1,15 @@
-import { ArabicToCyrillicConverter } from "@sarmay/kaz-converter";
-import type { ContextDisambiguator, MaybePromise, RawToken } from "@sarmay/kaz-converter";
+import {
+  ArabicToCyrillicConverter,
+  CandidateDisambiguator,
+  DEFAULT_HOMOGRAPHS,
+  DEFAULT_TYPO_CANDIDATES
+} from "@sarmay/kaz-converter";
+import type { SentenceScorer, SentenceScorerLike } from "@sarmay/kaz-converter";
 import { access, readFile } from "node:fs/promises";
 import { join } from "node:path";
 
-export interface SentenceScorer {
-  score(sentence: string): MaybePromise<number>;
-}
-
-export type SentenceScorerLike = SentenceScorer | ((sentence: string) => MaybePromise<number>);
+export { DEFAULT_HOMOGRAPHS, DEFAULT_TYPO_CANDIDATES };
+export type { SentenceScorer, SentenceScorerLike };
 
 export interface CandidateLanguageModelDisambiguatorOptions {
   scorer: SentenceScorerLike;
@@ -35,85 +37,7 @@ export interface CreateOnnxDisambiguatorOptions extends OnnxMaskedLanguageModelS
   typoCandidates?: Record<string, readonly string[]>;
 }
 
-export const DEFAULT_HOMOGRAPHS: Record<string, readonly string[]> = {
-  "الما": ["алма", "әлме"],
-  "اكە": ["әке", "ака"],
-  "بىر": ["бір", "бұр"]
-};
-
-export const DEFAULT_TYPO_CANDIDATES: Record<string, readonly string[]> = {
-  "نٵۋرىز": ["Нәуріз", "Наурыз"],
-  "تۇرلى": ["тұрлы", "түрлі"],
-  "داستۇرلەر": ["дастұрлер", "дәстүрлер"],
-  "كوكپار": ["көкпәр", "көкпар"],
-  "سياقتى": ["сияқті", "сияқты"],
-  "پەنويىن-ساۋىق": ["пенөйін-сауық", "пен ойын-сауық"]
-};
-
-function resolveScorer(scorer: SentenceScorerLike): SentenceScorer {
-  if (typeof scorer === "function") {
-    return {
-      score: scorer
-    };
-  }
-
-  return scorer;
-}
-
-export class CandidateLanguageModelDisambiguator implements ContextDisambiguator {
-  private readonly scorer: SentenceScorer;
-  private readonly homographs: Record<string, readonly string[]>;
-  private readonly typoCandidates: Record<string, readonly string[]>;
-
-  constructor(options: CandidateLanguageModelDisambiguatorOptions) {
-    this.scorer = resolveScorer(options.scorer);
-    this.homographs = options.homographs ?? DEFAULT_HOMOGRAPHS;
-    this.typoCandidates = options.typoCandidates ?? DEFAULT_TYPO_CANDIDATES;
-  }
-
-  async disambiguate(rawTokens: readonly RawToken[]): Promise<string[]> {
-    const resolved = rawTokens.map(([, converted]) => converted);
-    const targetIndices: number[] = [];
-
-    rawTokens.forEach(([arabWord], index) => {
-      if (arabWord in this.homographs || arabWord in this.typoCandidates) {
-        targetIndices.push(index);
-      }
-    });
-
-    if (targetIndices.length === 0) {
-      return resolved;
-    }
-
-    for (const targetIndex of targetIndices) {
-      const arabWord = rawTokens[targetIndex][0];
-      const candidates = this.homographs[arabWord] ?? this.typoCandidates[arabWord];
-
-      if (!candidates || candidates.length === 0) {
-        continue;
-      }
-
-      let bestCandidate = candidates[0];
-      let lowestScore = Number.POSITIVE_INFINITY;
-
-      for (const candidate of candidates) {
-        const tempSentenceTokens = [...resolved];
-        tempSentenceTokens[targetIndex] = candidate;
-        const sentence = tempSentenceTokens.join(" ");
-        const score = await this.scorer.score(sentence);
-
-        if (score < lowestScore) {
-          lowestScore = score;
-          bestCandidate = candidate;
-        }
-      }
-
-      resolved[targetIndex] = bestCandidate;
-    }
-
-    return resolved;
-  }
-}
+export class CandidateLanguageModelDisambiguator extends CandidateDisambiguator {}
 
 interface HfEncoding {
   ids: number[];

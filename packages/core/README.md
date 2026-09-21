@@ -7,7 +7,7 @@
 - 浏览器 ESM
 - Node.js
 
-这个包默认不包含语言模型，不依赖 `onnxruntime-node`，适合 Web 和普通 Node.js 项目直接使用。
+这个包默认带一层很轻的字符 n-gram 消歧，不依赖 `onnxruntime-node`，适合 Web 和普通 Node.js 项目直接使用。
 
 ## 安装
 
@@ -62,9 +62,21 @@ console.log(cyr2arb.convert("Қазақстан"));
 - `syr2arb(text)`
 - `new ArabicToCyrillicConverter(options?)`
 - `new CyrillicToArabicConverter(options?)`
+- `new LightDisambiguator()`
 - `new NoopDisambiguator()`
+- `new CandidateDisambiguator({ scorer })`
 
-## 想接入 LM 消歧
+默认会用 `LightDisambiguator` 给少数同形词、脏数据候选打分。若要关掉：
+
+```ts
+import { ArabicToCyrillicConverter, NoopDisambiguator } from "@sarmay/kaz-converter";
+
+const converter = new ArabicToCyrillicConverter({
+  disambiguator: new NoopDisambiguator()
+});
+```
+
+## 想接入更重的 ONNX 消歧
 
 请安装第二个包：
 
