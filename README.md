@@ -36,7 +36,7 @@
 
 - Web 前端
 - 浏览器工具
-- 不需要上下文消歧的 Node.js 服务
+- 普通 Node.js 服务
 - 对包体积敏感的场景
 
 ### `@sarmay/kaz-converter-lm`
@@ -44,8 +44,8 @@
 负责：
 
 - ONNX masked language model 句子打分
-- 同形词、多候选词、脏数据候选的选择
-- 直接创建带 LM 的 `ArabicToCyrillicConverter`
+- 把该 scorer 接到核心包已有的候选消歧接口上
+- 直接创建带 ONNX 消歧的 `ArabicToCyrillicConverter`
 
 不负责：
 
@@ -66,8 +66,8 @@
 - 核心转换本身应该足够轻，前端用户不应该被迫安装 `onnxruntime-node`
 - LM 相关依赖只适用于 Node.js，不应该污染浏览器侧依赖图
 - 模型文件很大，不适合打进 npm 包
-- 很多用户只需要稳定规则转换，并不需要 LM
-- 一部分用户需要换成自己的模型，所以 LM 层必须独立
+- 很多用户只需要规则 + 轻量消歧，并不需要 ONNX
+- 一部分用户需要换成自己的大模型，所以重 LM 层必须独立
 
 简单说：
 
@@ -160,7 +160,7 @@ console.log(await converter.convertAsync("اكەم كەلدى."));
 packages/
   core/     -> @sarmay/kaz-converter
   lm/       -> @sarmay/kaz-converter-lm
-examples/   -> 浏览器、Node.js、Node.js + ONNX 示例
+examples/   -> 浏览器、Node.js 轻量消歧、自定义 scorer、Node.js + ONNX 示例
 scripts/    -> 模型导出和下载脚本
 docs/       -> 训练、发布、模型下载文档
 models/     -> 本地模型目录占位
@@ -445,27 +445,17 @@ interface ArabicToCyrillicOptions {
 字段说明：
 
 - `useLm`
-  语义上表示“当前转换器准备启用基于上下文的消歧能力”。
+  兼容旧语义：表示你要接**外部**重消歧器（通常是 ONNX）。设为 `true` 时必须同时传 `disambiguator`，否则抛错。默认路径不需要它。
 - `disambiguator`
-  由调用方提供的候选消歧器，真正负责异步上下文判断。
+  候选消歧器。不传时默认使用核心包的 `LightDisambiguator`。传 `NoopDisambiguator` 可关掉消歧。
 - `nameYSequenceStyle`
   控制某些姓名中 `ييا / ييار / يياز / يياس` 这类序列的输出风格。
 
 #### `useLm` 的真实含义
 
-这里有一个很容易误解的点。
+默认已经有轻量消歧，**不要**为了开启消歧去写 `useLm: true`。
 
-`useLm` 不是说：
-
-- 核心包里内置了 LM
-- 只要设成 `true` 就会自动有模型能力
-
-它真正表示的是：
-
-- 你显式声明“这次实例化准备启用基于上下文的消歧”
-- 如果这样声明，就必须由调用方同时提供 `disambiguator`
-
-当前核心包本身不内置 LM，所以如果你写：
+`useLm: true` 只表示：这次实例要接一个外部 `disambiguator`（例如 ONNX）。如果你写：
 
 ```ts
 new ArabicToCyrillicConverter({ useLm: true })
@@ -473,11 +463,11 @@ new ArabicToCyrillicConverter({ useLm: true })
 
 会直接抛错，因为没有提供 `disambiguator`。
 
-还需要注意一个实现细节：
+真正决定用哪套消歧的是 `disambiguator`：
 
-- 当前版本里，真正决定异步消歧是否发生的是 `disambiguator` 是否存在
-- `useLm` 更像一个显式意图和安全检查
-- 如果你传了 `disambiguator`，即使没有写 `useLm: true`，异步 `convertAsync()` 仍然会走你提供的消歧器
+- 不传：`LightDisambiguator`，同步 `convert()` 和异步 `convertAsync()` 都会用
+- 传入自定义实现：按你的实现走
+- 传入 `NoopDisambiguator`：纯规则，不做候选排序
 
 #### `disambiguator` 的接口
 
@@ -501,9 +491,9 @@ interface ContextDisambiguator {
 
 这意味着你可以自定义：
 
-- 本地 ONNX scorer
+- 默认的轻量 n-gram（核心包，无需另装）
+- 本地 ONNX scorer（`@sarmay/kaz-converter-lm`）
 - HTTP 远程打分服务
-- 数据库规则
 - 你自己的语言模型
 
 #### `nameYSequenceStyle`
@@ -639,7 +629,7 @@ const disambiguator = new CandidateLanguageModelDisambiguator({
 
 #### 自定义 scorer
 
-你不一定非要用 ONNX。
+默认已经有轻量 n-gram，不必为了自定义打分去装 `@sarmay/kaz-converter-lm`。
 
 只要实现：
 
@@ -649,35 +639,21 @@ interface SentenceScorer {
 }
 ```
 
-就可以接：
-
-- 自己的模型服务
-- 另一个推理引擎
-- 任何能给句子打分的系统
-
-示例：
+就可以接自己的模型服务或任何打分函数。
 
 ```ts
-import { ArabicToCyrillicConverter } from "@sarmay/kaz-converter";
-import { CandidateLanguageModelDisambiguator } from "@sarmay/kaz-converter-lm";
+import { ArabicToCyrillicConverter, CandidateDisambiguator } from "@sarmay/kaz-converter";
 
-const disambiguator = new CandidateLanguageModelDisambiguator({
-  scorer: async (sentence) => {
-    if (sentence.includes("Алма")) return 0.1;
-    if (sentence.includes("Әлме")) return 0.9;
+const disambiguator = new CandidateDisambiguator({
+  scorer: (sentence) => {
+    if (sentence.includes("алма")) return 0.1;
+    if (sentence.includes("әлме")) return 0.9;
     return 1;
-  },
-  homographs: {
-    "الما": ["Алма", "Әлме"]
   }
 });
 
-const converter = new ArabicToCyrillicConverter({
-  useLm: true,
-  disambiguator
-});
-
-console.log(await converter.convertAsync("الما بار."));
+const converter = new ArabicToCyrillicConverter({ disambiguator });
+console.log(converter.convert("الما بار."));
 ```
 
 #### ONNX 模型目录与文件名自定义
@@ -791,7 +767,7 @@ README 里最好明确区分这两层，不然用户会误以为所有规则都�
 适合：
 
 - 浏览器
-- 不需要上下文消歧
+- 默认规则 + 轻量消歧
 - 快速单次调用
 
 签名：
@@ -802,9 +778,9 @@ arb2syr(text: string, options?: ArabicToCyrillicOptions): string
 
 说明：
 
-- 会做预处理、规则转换、大小写和标点整理
-- 不会等待异步 LM 打分
-- 当前实现中它也不会调用 `disambiguator`，所以如果你要启用上下文消歧，请使用 `arb2syrAsync()` 或 `convertAsync()`
+- 会做预处理、规则转换、轻量消歧、大小写和标点整理
+- 同步 `disambiguator`（默认 `LightDisambiguator`）会在这条路径生效
+- 如果 scorer 是异步的，请用 `arb2syrAsync()` / `convertAsync()`
 
 ### `arb2syrAsync(text, options?)`
 
@@ -818,8 +794,8 @@ arb2syrAsync(text: string, options?: ArabicToCyrillicOptions): Promise<string>
 
 适合：
 
-- 需要 LM 消歧
-- 需要自定义异步 `disambiguator`
+- 需要自定义 `disambiguator`
+- 需要异步 scorer 时用 `convertAsync`
 
 ### `new ArabicToCyrillicConverter(options?)`
 
@@ -832,24 +808,22 @@ arb2syrAsync(text: string, options?: ArabicToCyrillicOptions): Promise<string>
 
 建议：
 
-- 无 LM 时可直接用 `convert`
-- 有 LM 时优先用 `convertAsync`
+- 默认轻量消歧是同步的，直接用 `convert`
+- 只有 scorer / disambiguator 是异步时（例如 ONNX）才需要 `convertAsync`
 
-额外说明：
+### `LightDisambiguator`
 
-- 当前实现里，`disambiguator` 只会在异步路径生效
-- 也就是说，即便你创建实例时传入了 `disambiguator`，同步 `convert()` 仍然是纯规则路径
+默认消歧器。用内置字符 3-gram 和词频，给同形词、脏数据候选打分。浏览器和 Node 都能用。
 
 ### `NoopDisambiguator`
 
-一个空实现的 `ContextDisambiguator`。
+空实现的 `ContextDisambiguator`。
 
-作用：
+传入后关闭消歧，只保留规则初步转换结果。
 
-- 占位
-- 无任何上下文修正
+### `CandidateDisambiguator`
 
-它的行为就是直接返回规则初步转换结果。
+通用候选排序器。你可以传入自己的 `scorer`，不必安装 LM 包。
 
 ## 西里尔文 -> 阿拉伯文 API 详解
 
@@ -864,7 +838,7 @@ syr2arb(text: string, options?: CyrillicToArabicOptions): string
 适合：
 
 - 西里尔到 Tote Zhazu 的规则转换
-- 无需 LM
+- 该方向不走消歧器
 
 ### `new CyrillicToArabicConverter(options?)`
 
@@ -1107,12 +1081,12 @@ const disambiguator = await createOnnxDisambiguator({
 - 极低频孤例
 - 依赖上下文而不是词内结构才能判断
 - 会明显破坏已有大批正确转换
-- 本质上更适合交给 LM 候选排序
+- 本质上更适合交给候选排序
 
 简单说：
 
 - 能用结构规则解决，就优先加规则
-- 需要上下文比较，就优先做成候选 + LM
+- 需要上下文比较，就优先做成候选 + 轻量消歧
 
 ## 仓库内示例
 
@@ -1123,6 +1097,10 @@ const disambiguator = await createOnnxDisambiguator({
 模型下载示例页：
 
 - [examples/model-download.html](examples/model-download.html)
+
+Node.js 轻量消歧示例：
+
+- [examples/node-light-disambiguator-demo.mjs](examples/node-light-disambiguator-demo.mjs)
 
 Node.js 自定义 scorer 示例：
 

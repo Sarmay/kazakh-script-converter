@@ -1,8 +1,7 @@
-import { ArabicToCyrillicConverter } from "../packages/core/dist/index.js";
-import { CandidateLanguageModelDisambiguator } from "../packages/lm/dist/index.js";
+import { ArabicToCyrillicConverter, CandidateDisambiguator } from "../packages/core/dist/index.js";
 
-const disambiguator = new CandidateLanguageModelDisambiguator({
-  scorer: async (sentence) => {
+const disambiguator = new CandidateDisambiguator({
+  scorer: (sentence) => {
     if (sentence.includes("әлме")) {
       return 0.05;
     }
@@ -16,7 +15,6 @@ const disambiguator = new CandidateLanguageModelDisambiguator({
 });
 
 const converter = new ArabicToCyrillicConverter({
-  useLm: true,
   disambiguator
 });
 

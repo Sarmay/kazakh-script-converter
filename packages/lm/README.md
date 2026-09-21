@@ -92,7 +92,6 @@ const disambiguator = new CandidateLanguageModelDisambiguator({
 });
 
 const converter = new ArabicToCyrillicConverter({
-  useLm: true,
   disambiguator
 });
 
@@ -138,25 +137,9 @@ const disambiguator = await createOnnxDisambiguator({
 
 ## 自定义打分器
 
-如果你不想用 ONNX，也可以自己提供一个句子打分器：
+如果你只是想换一个打分函数，不必安装本包。请用核心包的 `CandidateDisambiguator`。
 
-```ts
-import { ArabicToCyrillicConverter } from "@sarmay/kaz-converter";
-import { CandidateLanguageModelDisambiguator } from "@sarmay/kaz-converter-lm";
-
-const disambiguator = new CandidateLanguageModelDisambiguator({
-  scorer: async (sentence) => {
-    if (sentence.includes("Алма")) return 0.1;
-    if (sentence.includes("Әлме")) return 0.9;
-    return 1;
-  }
-});
-
-const converter = new ArabicToCyrillicConverter({
-  useLm: true,
-  disambiguator
-});
-```
+本包只在你已经有 ONNX 模型目录，并希望用 masked LM 打分时使用。
 
 更完整的模型准备和训练说明见仓库根目录 README 与 `docs/training-kazakh-lm.md`。
 
