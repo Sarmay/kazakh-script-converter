@@ -28,10 +28,10 @@
 - 两个包的 `version` 已更新
 - `packages/lm/package.json` 里的 `dependencies["@sarmay/kaz-converter"]` 与核心包版本一致
 
-例如核心包版本改成 `0.1.1` 后，LM 包依赖要改成：
+例如核心包版本改成 `0.2.0` 后，LM 包依赖要改成：
 
 ```json
-"@sarmay/kaz-converter": "^0.1.1"
+"@sarmay/kaz-converter": "^0.2.0"
 ```
 
 ### 2. 确认包元数据

@@ -1,6 +1,6 @@
 {
   "name": "@sarmay/kaz-converter-lm",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Optional Node.js ONNX backend for @sarmay/kaz-converter. The core package already ships a lightweight n-gram disambiguator.",
   "author": {
     "name": "sarmay",
@@ -47,7 +47,7 @@
   },
   "dependencies": {
     "@huggingface/tokenizers": "^0.1.3",
-    "@sarmay/kaz-converter": "^0.1.1",
+    "@sarmay/kaz-converter": "^0.2.0",
     "onnxruntime-node": "^1.24.3"
   },
   "keywords": [
