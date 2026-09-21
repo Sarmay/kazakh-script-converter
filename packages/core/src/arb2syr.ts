@@ -180,7 +180,9 @@ const EXCEPTIONS: Record<string, string> = {
   "ديڭ شۋەشياڭ": "Диң Шуешяң",
   "لي شي": "Ли Си",
   "سۋبتىيتر": "субтитр",
-  "سۋبتىيتىرلەردى": "субтитрлерді"
+  "سۋبتىيتىرلەردى": "субтитрлерді",
+  "قوىيان": "қоян",
+  "قويان": "қоян"
 };
 
 const LOANWORD_EXACT = new Set([
@@ -318,7 +320,8 @@ const PROPER_NOUNS: Record<string, string> = {
   "قازاقستان": "Қазақстан",
   "الماتى": "Алматы",
   "استانا": "Астана",
-  "اراستانا": "Астана"
+  "اراستانا": "Астана",
+  "جىيىو": "ЖІӨ"
 };
 
 const VALID_SUFFIXES = new Set([
@@ -446,6 +449,44 @@ const COMPOUND_PIVOT_ROOTS = [
   "تۇستىگ"
 ];
 
+const ARABIC_HYPHEN_INFLECTION_SUFFIXES = new Set([
+  "ى",
+  "سى",
+  "نىڭ",
+  "دىڭ",
+  "تىڭ",
+  "عا",
+  "گە",
+  "قا",
+  "كە",
+  "نا",
+  "نە",
+  "نى",
+  "دى",
+  "تى",
+  "دا",
+  "دە",
+  "تا",
+  "تە",
+  "ندا",
+  "ندە",
+  "دان",
+  "دەن",
+  "تان",
+  "تەن",
+  "نان",
+  "نەن",
+  "مەن",
+  "بەن",
+  "پەن",
+  "لار",
+  "لەر",
+  "دار",
+  "دەر",
+  "تار",
+  "تەر"
+]);
+
 const NAME_PREFIX_COMPONENTS = [
   "ءابدى",
   "ابدى",
@@ -531,7 +572,7 @@ const IMPLICIT_SOFT_ROOTS = new Set([
   "تۇن",
   "جۇر",
   "ىلگەرى",
-  "بۇل"
+  "سوز"
 ]);
 
 const ARAB_CONSONANTS_FOR_CLUSTER = "بۆگعدجزكقلمنڭپرستفحھچش";
@@ -843,9 +884,21 @@ export class ArabicToCyrillicConverter {
     }
 
     for (const suffix of NAME_SUFFIX_COMPONENTS) {
-      if (word.endsWith(suffix) && word.length > suffix.length) {
-        return [word.slice(0, -suffix.length), suffix];
+      if (!word.endsWith(suffix)) {
+        continue;
       }
+
+      const prefixLength = word.length - suffix.length;
+      if (prefixLength === 0) {
+        continue;
+      }
+
+      const prefix = word.slice(0, prefixLength);
+      if (prefixLength === 1 && "اوىۇە".includes(prefix)) {
+        continue;
+      }
+
+      return [prefix, suffix];
     }
 
     if (word.startsWith(this.HAMZA)) {
@@ -855,7 +908,7 @@ export class ArabicToCyrillicConverter {
     for (const pivot of COMPOUND_PIVOT_ROOTS) {
       if (word.includes(pivot) && !word.startsWith(pivot)) {
         const pivotIndex = word.indexOf(pivot);
-        if (pivotIndex > 0 && word[pivotIndex - 1] !== this.HAMZA) {
+        if (pivotIndex >= 3 && word[pivotIndex - 1] !== this.HAMZA) {
           return [word.slice(0, pivotIndex), word.slice(pivotIndex)];
         }
       }
@@ -872,6 +925,19 @@ export class ArabicToCyrillicConverter {
     return [word];
   }
 
+  private isProtectedDigraphSplit(word: string, splitIndex: number): boolean {
+    if (splitIndex <= 0 || splitIndex >= word.length) {
+      return false;
+    }
+
+    const pair = word.slice(splitIndex - 1, splitIndex + 1);
+    if (pair === "ىي" || pair === "يي" || pair === "يۋ" || pair === "يا" || pair === "شش" || pair === "تس") {
+      return true;
+    }
+
+    return word[splitIndex - 1] === this.HAMZA && "اوىۇ".includes(word[splitIndex]);
+  }
+
   extractRootAndSuffix(word: string): RootMatch {
     if (!word) {
       return { matchType: null, base: null, suffix: word };
@@ -881,7 +947,7 @@ export class ArabicToCyrillicConverter {
       const prefix = word.slice(0, length);
       const suffix = word.slice(length);
 
-      if (!this.isValidSuffixSequence(suffix)) {
+      if (!this.isValidSuffixSequence(suffix) || this.isProtectedDigraphSplit(word, length)) {
         continue;
       }
 
@@ -906,7 +972,7 @@ export class ArabicToCyrillicConverter {
         continue;
       }
 
-      if (this.crossesProtectedNameEnding(word, length)) {
+      if (this.crossesProtectedNameEnding(word, length) || this.isProtectedDigraphSplit(word, length)) {
         continue;
       }
 
@@ -933,6 +999,9 @@ export class ArabicToCyrillicConverter {
       if (pair === "ىي") {
         if (suffix[index + 2] === "ا") {
           result.push("ия");
+          index += 3;
+        } else if (suffix[index + 2] === "ۋ") {
+          result.push("ию");
           index += 3;
         } else {
           result.push("и");
@@ -1037,9 +1106,24 @@ export class ArabicToCyrillicConverter {
       return PROPER_NOUNS[word];
     }
 
+    if (word.includes("-")) {
+      const parts = word.split("-");
+      const converted: string[] = [];
+
+      for (const [index, part] of parts.entries()) {
+        if (index > 0 && ARABIC_HYPHEN_INFLECTION_SUFFIXES.has(part) && converted.length > 0) {
+          converted.push(this.convertSuffixOnly(part, this.getCyrillicVowelState(converted[converted.length - 1])));
+        } else {
+          converted.push(this.convertWord(part));
+        }
+      }
+
+      return converted.join("-");
+    }
+
     const segments = this.segmentCompoundWord(word);
     if (segments.length > 1) {
-      return word.includes("-") ? segments.map((segment) => this.convertWord(segment)).join("-") : segments.map((segment) => this.convertWord(segment)).join("");
+      return segments.map((segment) => this.convertWord(segment)).join("");
     }
 
     if (LOANWORD_EXACT.has(word)) {
@@ -1133,6 +1217,11 @@ export class ArabicToCyrillicConverter {
         }
         if (threeChars === "ىيىا" || threeChars === "ييىا" || word[index + 2] === "ا") {
           result.push("ия");
+          index += 3;
+          continue;
+        }
+        if (word[index + 2] === "ۋ") {
+          result.push("ию");
           index += 3;
           continue;
         }
@@ -1231,13 +1320,7 @@ export class ArabicToCyrillicConverter {
 
       if (char === "ي") {
         if (index === 0) {
-          if (isLoanword) {
-            result.push("и");
-          } else if (index + 1 < word.length && this.arabicVowels.has(word[index + 1])) {
-            result.push("й");
-          } else {
-            result.push("и");
-          }
+          result.push("и");
         } else {
           const prevChar = word[index - 1];
           result.push(["ا", "ى", "و", "ۇ", "ە", "ۋ"].includes(prevChar) ? "й" : "и");

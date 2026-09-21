@@ -79,6 +79,31 @@ describe("ArabicToCyrillicConverter", () => {
     expect(arb2syr("دييار", { nameYSequenceStyle: "preserve" })).toBe("Дийар");
     expect(arb2syr("نيياز", { nameYSequenceStyle: "preserve" })).toBe("Нийаз");
   });
+
+  test("recovers front vowels when Xinjiang orthography omits hamza", () => {
+    const cases = [
+      ["اكە", "Әке"],
+      ["اكەسى", "Әкесі"],
+      ["اكەلدى", "Әкелді"],
+      ["وزگەرتپەك", "Өзгертпек"],
+      ["باسپاسوز", "Баспасөз"],
+      ["ٴسوز", "Сөз"],
+      ["سوز", "Сөз"],
+      ["بۇل", "Бұл"],
+      ["ٴبۇل", "Бүл"],
+      ["يەسى", "Иесі"],
+      ["يىق", "Иық"],
+      ["ايۋ", "Аю"],
+      ["قوىيان", "Қоян"],
+      ["جىيىو-سى", "ЖІӨ-сі"],
+      ["ٴوز-ٴوزى", "Өз-өзі"],
+      ["قىيۋ", "Қию"]
+    ] as const;
+
+    for (const [input, expected] of cases) {
+      expect(arb2syr(input), input).toBe(expected);
+    }
+  });
 });
 
 describe("CyrillicToArabicConverter", () => {
@@ -153,6 +178,59 @@ describe("CyrillicToArabicConverter", () => {
 
     for (const [input, expected] of cases) {
       expect(syr2arb(input), input).toBe(expected);
+    }
+  });
+
+  test("round-trips hamza cases through Arabic and back", () => {
+    const cases = [
+      "іс",
+      "үй",
+      "өз",
+      "сөз",
+      "тіл",
+      "бір",
+      "әке",
+      "әкесі",
+      "әлем",
+      "өзен",
+      "өте",
+      "өнер",
+      "өмір",
+      "үлес",
+      "үшін",
+      "тиіс",
+      "тиісті",
+      "өседі",
+      "ит",
+      "ине",
+      "иіс",
+      "иесі",
+      "иық",
+      "кітап",
+      "күн",
+      "мектеп",
+      "сен",
+      "қазақ",
+      "әкелді",
+      "өзгертпек",
+      "өз-өзі",
+      "ЖІӨ-сі",
+      "баспасөз",
+      "өнеркәсіп",
+      "бірақ",
+      "іздеді",
+      "сөйледі",
+      "бұл",
+      "қоян",
+      "аю",
+      "қию"
+    ] as const;
+
+    for (const input of cases) {
+      const arabic = syr2arb(input);
+      const back = arb2syr(arabic);
+      const expected = input.replace(/[a-zа-яәіңғүұқөһ]/iu, (char) => char.toUpperCase());
+      expect(back, `${input} -> ${arabic}`).toBe(expected);
     }
   });
 });
