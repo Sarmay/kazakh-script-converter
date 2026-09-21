@@ -157,3 +157,7 @@ const converter = new ArabicToCyrillicConverter({
 ```
 
 更完整的模型准备和训练说明见仓库根目录 README 与 `docs/training-kazakh-lm.md`。
+
+## License
+
+MIT. See [LICENSE](LICENSE).

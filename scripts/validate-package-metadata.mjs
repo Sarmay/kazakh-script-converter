@@ -36,10 +36,15 @@ for (const { packagePath, pkg } of packages) {
     "repository.directory",
     "homepage",
     "bugs.url",
+    "license",
     "publishConfig.access",
     "publishConfig.registry"
   ]) {
     assertField(packagePath, pkg, field, errors);
+  }
+
+  if (pkg.license !== "MIT") {
+    errors.push(`${packagePath}: license must be "MIT"`);
   }
 
   if (pkg.publishConfig?.access !== "public") {

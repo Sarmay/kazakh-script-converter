@@ -73,3 +73,7 @@ npm install @sarmay/kaz-converter @sarmay/kaz-converter-lm
 ```
 
 然后参考 `@sarmay/kaz-converter-lm` 的 README，或者仓库根目录 README。
+
+## License
+
+MIT. See [LICENSE](LICENSE).

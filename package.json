@@ -1,6 +1,7 @@
 {
   "name": "@sarmay/kaz-converter-workspace",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "packageManager": "npm@10.8.2",
   "workspaces": [

@@ -8,11 +8,8 @@ const PROPER_NOUNS: Record<string, string> = {
 };
 
 const COMMON_WORDS: Record<string, string> = {
-  "тиіс": "تىيىس",
-  "тиісті": "تىيىستى",
   "бірақ": "بىراق",
-  "қоян": "قوىيان",
-  "үшін": "ۇشىن"
+  "қоян": "قوىيان"
 };
 
 const CONSONANTS: Record<string, string> = {
@@ -62,7 +59,54 @@ const COMBINATIONS: Record<string, string> = {
 
 const FRONT_VOWELS = new Set(["ә", "е", "і", "ө", "ү"]);
 const BACK_VOWELS = new Set(["а", "о", "ұ", "ы", "у"]);
-const I_INITIAL_NATIVE_WORDS = new Set(["иіс", "ине", "ит", "ию", "иір", "иіл", "ирі", "иық", "ин"]);
+const CYRILLIC_VOWELS = new Set(["а", "ә", "е", "о", "ө", "ұ", "ү", "ы", "і", "у", "э", "ю", "я", "ё", "и"]);
+const HAMZA_FRONT_VOWELS = new Set(["ә", "ө", "ү", "і"]);
+const I_INITIAL_NATIVE_WORDS = new Set(["иіс", "ине", "ит", "ию", "иір", "иіл", "ирі", "ин"]);
+const HYPHEN_INFLECTION_SUFFIXES = new Set([
+  "ы",
+  "і",
+  "сы",
+  "сі",
+  "ның",
+  "нің",
+  "дың",
+  "дің",
+  "тың",
+  "тің",
+  "ға",
+  "ге",
+  "қа",
+  "ке",
+  "на",
+  "не",
+  "ны",
+  "ні",
+  "ды",
+  "ді",
+  "ты",
+  "ті",
+  "да",
+  "де",
+  "та",
+  "те",
+  "нда",
+  "нде",
+  "дан",
+  "ден",
+  "тан",
+  "тен",
+  "нан",
+  "нен",
+  "мен",
+  "бен",
+  "пен",
+  "лар",
+  "лер",
+  "дар",
+  "дер",
+  "тар",
+  "тер"
+]);
 const PUNCTUATION: Record<string, string> = {
   ",": "،",
   ".": ".",
@@ -225,6 +269,47 @@ export class CyrillicToArabicConverter {
     return "back";
   }
 
+  private firstHarmonyVowel(word: string): string | null {
+    for (let index = 0; index < word.length; index += 1) {
+      const char = word[index];
+      const next = word[index + 1];
+
+      if (char === "и") {
+        if (index === 0 && next && CYRILLIC_VOWELS.has(next) && next !== "и") {
+          continue;
+        }
+
+        if (index === 0) {
+          return "і";
+        }
+
+        continue;
+      }
+
+      if (char === "я") {
+        return "а";
+      }
+
+      if (char === "ю") {
+        return "у";
+      }
+
+      if (char === "ё") {
+        return "о";
+      }
+
+      if (CYRILLIC_VOWELS.has(char)) {
+        return char;
+      }
+    }
+
+    return null;
+  }
+
+  private prependHamza(arabicResult: string): string {
+    return arabicResult.startsWith(this.HAMZA) ? arabicResult : `${this.HAMZA}${arabicResult}`;
+  }
+
   private applyHamzaRule(arabicResult: string, firstSegText: string, firstSegIsLoan: boolean, isSuffix = false): string {
     if (arabicResult.includes(this.HAMZA) || !firstSegText || isSuffix) {
       return arabicResult;
@@ -235,24 +320,16 @@ export class CyrillicToArabicConverter {
       return arabicResult;
     }
 
-    if ([...I_INITIAL_NATIVE_WORDS].some((word) => firstSegLower.startsWith(word))) {
-      return arabicResult.startsWith(this.HAMZA) ? arabicResult : `${this.HAMZA}${arabicResult}`;
-    }
-
-    if ([...firstSegLower].some((char) => char === "к" || char === "г")) {
+    if ([...firstSegLower].some((char) => char === "к" || char === "г" || char === "қ" || char === "ғ")) {
       return arabicResult;
     }
 
-    const eHamzaWhitelist = new Set(["өзен", "өте", "өнер", "ине", "әлем"]);
-    if (firstSegLower.includes("е") && !eHamzaWhitelist.has(firstSegLower)) {
+    const firstVowel = this.firstHarmonyVowel(firstSegLower);
+    if (!firstVowel || !HAMZA_FRONT_VOWELS.has(firstVowel)) {
       return arabicResult;
     }
 
-    if (this.getInitialHarmony(firstSegLower) === "front") {
-      return arabicResult.startsWith(this.HAMZA) ? arabicResult : `${this.HAMZA}${arabicResult}`;
-    }
-
-    return arabicResult;
+    return this.prependHamza(arabicResult);
   }
 
   convertWord(word: string, isSuffix = false): string {
@@ -385,7 +462,7 @@ export class CyrillicToArabicConverter {
     const converted = [this.convertWord(parts[0])];
 
     for (const part of parts.slice(1)) {
-      converted.push(this.convertWord(part, true));
+      converted.push(this.convertWord(part, HYPHEN_INFLECTION_SUFFIXES.has(part)));
     }
 
     return converted.join("-");
