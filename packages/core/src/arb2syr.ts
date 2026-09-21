@@ -62,7 +62,7 @@ const EXCEPTIONS: Record<string, string> = {
   "بىيولوگيا": "биология",
   "كوەففيتسىيەنت": "коэффициент",
   "كوەففيتسيەنت": "коэффициент",
-  "پروتسەس": "процесс",
+  "پروتسەس": "процес",
   "تەلەۆىيزور": "телевизор",
   "تەلەۆيزور": "телевизор",
   "ٴاردايىم": "әрдайым",
@@ -182,7 +182,9 @@ const EXCEPTIONS: Record<string, string> = {
   "سۋبتىيتر": "субтитр",
   "سۋبتىيتىرلەردى": "субтитрлерді",
   "قوىيان": "қоян",
-  "قويان": "қоян"
+  "قويان": "қоян",
+  "تىيىم": "тыйым",
+  "تاۋەلسىزدىك": "тәуелсіздік"
 };
 
 const LOANWORD_EXACT = new Set([
@@ -190,6 +192,7 @@ const LOANWORD_EXACT = new Set([
   "ۋنىيۆەرسىتەت",
   "ۋنىۆەرسىتەت",
   "ۋنىۆەرسىيتەت",
+  "ۋنيۆەرسيتەت",
   "كونستىيتۋتسىيىا",
   "كونستىيتۋتسىييا",
   "كونستىيتۋتسىيا",
@@ -202,7 +205,8 @@ const LOANWORD_EXACT = new Set([
   "اتوم",
   "چەمپىيون",
   "چەمپىيۇن",
-  "ششەتكا"
+  "ششەتكا",
+  "رەسۋرس"
 ]);
 
 const LOANWORD_E_PREFIXES = [
@@ -694,7 +698,7 @@ export class ArabicToCyrillicConverter {
   private readonly reArabicWords = /[\u0600-\u06FF\uFB50-\uFDFF\uFE70-\uFEFF]+(?:[-\s]+[\u0600-\u06FF\uFB50-\uFDFF\uFE70-\uFEFF]+)*/gu;
   private readonly reCapAfterPunct = /([.。:：?？!！])\s*([a-zа-яәіңғүұқөһ])/giu;
   private readonly reCapAfterQuote = /([«"'"])\s*([a-zа-яәіңғүұқөһ])/giu;
-  private readonly frontVowelsCyr = new Set(["ә", "е", "і", "ө", "ү", "э", "и"]);
+  private readonly frontVowelsCyr = new Set(["ә", "е", "і", "ө", "ү", "э"]);
   private readonly backVowelsCyr = new Set(["а", "о", "ұ", "ы", "я", "ю"]);
   private readonly arabicVowels = new Set(["ا", "ى", "و", "ۇ", "ە", "ۋ", "ي"]);
 
@@ -879,7 +883,10 @@ export class ArabicToCyrillicConverter {
 
     for (const prefix of NAME_PREFIX_COMPONENTS) {
       if (word.startsWith(prefix) && word.length > prefix.length) {
-        return [word.slice(0, prefix.length), word.slice(prefix.length)];
+        const rest = word.slice(prefix.length);
+        if (rest[0] && !"اوىۇەي".includes(rest[0]) && rest[0] !== this.HAMZA) {
+          return [prefix, rest];
+        }
       }
     }
 
@@ -898,7 +905,22 @@ export class ArabicToCyrillicConverter {
         continue;
       }
 
+      if (this.isProtectedDigraphSplit(word, prefixLength)) {
+        continue;
+      }
+
       return [prefix, suffix];
+    }
+
+    if (!word.includes(this.HAMZA)) {
+      const glideCompound = word.match(/[اوىۇ]ي[بگعدجزكقلمنڭپرستفحھچش]/u);
+      if (glideCompound && glideCompound.index !== undefined && glideCompound.index >= 1) {
+        const splitAt = glideCompound.index + 2;
+        const rest = word.slice(splitAt);
+        if (/[ەكگ]/u.test(rest)) {
+          return [word.slice(0, splitAt), rest];
+        }
+      }
     }
 
     if (word.startsWith(this.HAMZA)) {
@@ -943,6 +965,20 @@ export class ArabicToCyrillicConverter {
       return { matchType: null, base: null, suffix: word };
     }
 
+    let longestLoanStem = "";
+    for (const exact of LOANWORD_EXACT) {
+      if (word.startsWith(exact) && exact.length > longestLoanStem.length && exact.length < word.length) {
+        const suffix = word.slice(exact.length);
+        if (this.isValidSuffixSequence(suffix)) {
+          longestLoanStem = exact;
+        }
+      }
+    }
+
+    if (longestLoanStem) {
+      return { matchType: "loanword", base: longestLoanStem, suffix: word.slice(longestLoanStem.length) };
+    }
+
     for (let length = word.length; length > 1; length -= 1) {
       const prefix = word.slice(0, length);
       const suffix = word.slice(length);
@@ -964,6 +1000,8 @@ export class ArabicToCyrillicConverter {
       }
     }
 
+    const anonymousSplits: RootMatch[] = [];
+
     for (let length = word.length - 1; length > 1; length -= 1) {
       const prefix = word.slice(0, length);
       const suffix = word.slice(length);
@@ -977,8 +1015,17 @@ export class ArabicToCyrillicConverter {
       }
 
       if (this.isValidSuffixSequence(suffix)) {
-        return { matchType: "anonymous", base: prefix, suffix };
+        anonymousSplits.push({ matchType: "anonymous", base: prefix, suffix });
       }
+    }
+
+    const longerSplits = anonymousSplits.filter((split) => (split.suffix?.length ?? 0) >= 2);
+    if (longerSplits.length > 0) {
+      return longerSplits[0];
+    }
+
+    if (anonymousSplits.length > 0) {
+      return anonymousSplits[0];
     }
 
     return { matchType: null, base: null, suffix: word };
@@ -1140,17 +1187,19 @@ export class ArabicToCyrillicConverter {
 
     if (matchType === "loanword" && base) {
       const baseCyr = this.convertWordInternal(base);
-      return `${baseCyr}${this.convertSuffixOnly(suffix, this.getCyrillicVowelState(baseCyr))}`;
+      const suffixIsFront = [...suffix].some((char) => char === "ك" || char === "گ");
+      return `${baseCyr}${this.convertSuffixOnly(suffix, suffixIsFront)}`;
     }
 
     if (matchType === "anonymous" && base) {
       if (this.isLoanword(base)) {
         const baseCyr = this.convertWordInternal(base);
-        return `${baseCyr}${this.convertSuffixOnly(suffix, this.getCyrillicVowelState(baseCyr))}`;
+        const suffixIsFront = [...suffix].some((char) => char === "ك" || char === "گ");
+        return `${baseCyr}${this.convertSuffixOnly(suffix, suffixIsFront)}`;
       }
 
       const baseCyr = this.convertWordInternal(base, forcedState);
-      return `${baseCyr}${this.convertSuffixOnly(suffix, wholeWordIsFront)}`;
+      return `${baseCyr}${this.convertSuffixOnly(suffix, this.getCyrillicVowelState(baseCyr))}`;
     }
 
     return this.convertWordInternal(word, forcedState);
@@ -1314,6 +1363,15 @@ export class ArabicToCyrillicConverter {
       if (Object.prototype.hasOwnProperty.call(VOWEL_MAP, char)) {
         const vowel = VOWEL_MAP[char];
         result.push(typeof vowel === "string" ? vowel : currentState === "soft" ? vowel.f : vowel.b);
+        if (char === "ە" && !word.includes(this.HAMZA)) {
+          if (isLoanword) {
+            currentState = "hard";
+          } else {
+            const seenFrontConsonant = [...word.slice(0, index)].some((letter) => letter === "ك" || letter === "گ");
+            const laterFrontConsonant = [...word.slice(index + 1)].some((letter) => letter === "ك" || letter === "گ");
+            currentState = seenFrontConsonant || laterFrontConsonant ? "soft" : "hard";
+          }
+        }
         index += 1;
         continue;
       }
@@ -1416,6 +1474,7 @@ export class ArabicToCyrillicConverter {
         result = result.replace(/[a-zа-яәіңғүұқөһ]/iu, (match) => match.toUpperCase());
       }
 
+      result = result.replace(/-([a-zа-яәіңғүұқөһ]{4,})/giu, (_match, part: string) => `-${part[0].toUpperCase()}${part.slice(1)}`);
       result = result.replace(this.reCapAfterPunct, (_match, punctuation: string, char: string) => `${punctuation} ${char.toUpperCase()}`);
       result = result.replace(this.reCapAfterQuote, (_match, quote: string, char: string) => `${quote}${char.toUpperCase()}`);
       convertedLines.push(result);
@@ -1454,6 +1513,7 @@ export class ArabicToCyrillicConverter {
         result = result.replace(/[a-zа-яәіңғүұқөһ]/iu, (char) => char.toUpperCase());
       }
 
+      result = result.replace(/-([a-zа-яәіңғүұқөһ]{4,})/giu, (_match, part: string) => `-${part[0].toUpperCase()}${part.slice(1)}`);
       result = result.replace(this.reCapAfterPunct, (_match, punctuation: string, char: string) => `${punctuation} ${char.toUpperCase()}`);
       result = result.replace(this.reCapAfterQuote, (_match, quote: string, char: string) => `${quote}${char.toUpperCase()}`);
       convertedLines.push(result);

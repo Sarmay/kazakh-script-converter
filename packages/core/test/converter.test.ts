@@ -233,4 +233,14 @@ describe("CyrillicToArabicConverter", () => {
       expect(back, `${input} -> ${arabic}`).toBe(expected);
     }
   });
+
+  test("round-trips the 18-sentence business suite through Arabic and back", () => {
+    for (const [input, arabic, label] of cyrillicToArabicSentenceCases) {
+      expect(syr2arb(input), `${label} syr2arb`).toBe(arabic);
+
+      const back = arb2syr(arabic);
+      const expected = input.replace(/[a-zа-яәіңғүұқөһ]/iu, (char) => char.toUpperCase());
+      expect(back, `${label} round-trip`).toBe(expected);
+    }
+  });
 });
